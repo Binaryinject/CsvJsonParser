@@ -115,21 +115,21 @@ if (args.Length > 0) {
                                     "DOUBLE[]" => GetSplitData<double>(parserValue),
                                     "FLOAT[]" => GetSplitData<double>(parserValue),
                                     "BOOL[]" => GetSplitData<bool>(parserValue),
-                                    "STRING[][]" => GetSplitData<string>(parserValue),
-                                    "INT[][]" => GetSplitData<int>(parserValue),
-                                    "DOUBLE[][]" => GetSplitData<double>(parserValue),
-                                    "FLOAT[][]" => GetSplitData<double>(parserValue),
-                                    "BOOL[][]" => GetSplitData<bool>(parserValue),
+                                    "STRING[][]" => GetSplitData<string[]>(parserValue),
+                                    "INT[][]" => GetSplitData<int[]>(parserValue),
+                                    "DOUBLE[][]" => GetSplitData<double[]>(parserValue),
+                                    "FLOAT[][]" => GetSplitData<double[]>(parserValue),
+                                    "BOOL[][]" => GetSplitData<bool[]>(parserValue),
                                     "STRING<>" => GetSplitData<string>(parserValue),
                                     "INT<>" => GetSplitData<int>(parserValue),
                                     "DOUBLE<>" => GetSplitData<double>(parserValue),
                                     "FLOAT<>" => GetSplitData<double>(parserValue),
                                     "BOOL<>" => GetSplitData<bool>(parserValue),
-                                    "STRING<[]>" => GetSplitData<string>(parserValue),
-                                    "INT<[]>" => GetSplitData<int>(parserValue),
-                                    "DOUBLE<[]>" => GetSplitData<double>(parserValue),
-                                    "FLOAT<[]>" => GetSplitData<double>(parserValue),
-                                    "BOOL<[]>" => GetSplitData<bool>(parserValue),
+                                    "STRING<[]>" => GetSplitData<string[]>(parserValue),
+                                    "INT<[]>" => GetSplitData<int[]>(parserValue),
+                                    "DOUBLE<[]>" => GetSplitData<double[]>(parserValue),
+                                    "FLOAT<[]>" => GetSplitData<double[]>(parserValue),
+                                    "BOOL<[]>" => GetSplitData<bool[]>(parserValue),
                                     _ => null
                                 };
                             }
@@ -150,7 +150,8 @@ if (args.Length > 0) {
                             }
                         }
                         catch (Exception) {
-                            Console.WriteLine($"File: [{Path.GetFileNameWithoutExtension(file)}] Row: [{line.Values[0]}] Column: [{keyName[i]}] Value: [{parserValue}] Type: [{keyType[i]}] parser error!");
+                            Console.WriteLine(
+                                $"File: [{Path.GetFileNameWithoutExtension(file)}] Row: [{line.Values[0]}] Column: [{keyName[i]}] Value: [{parserValue}] Type: [{keyType[i]}] parser error!");
                             return;
                         }
                     }
@@ -252,41 +253,46 @@ string LuaDefineTypeConvert(string type) {
 }
 
 JsonData GetSplitData<T>(string input) {
+    var typeArray = typeof(T).ToString().Contains("[]");
     var newJD = new JsonData();
     input += "|";
     var sp = input.Split('|');
     foreach (var v in sp) {
         if (string.IsNullOrEmpty(v)) continue;
+        var newJD2 = new JsonData();
         if (v.Contains('=')) {
             var sp2 = v.Split('=');
+            var key = sp2[0];
             var value = sp2[1];
-            if (value.Contains('~')) {
-                var newJD2 = new JsonData();
+            if (typeArray) {
+                value += "~";
                 var sp3 = value.Split('~');
                 foreach (var v2 in sp3) {
-                    if (typeof(T) == typeof(string)) newJD2.Add(v2);
-                    else if (typeof(T) == typeof(bool)) newJD2.Add(bool.Parse(v2));
-                    else if (typeof(T) == typeof(int)) newJD2.Add(int.Parse(v2));
-                    else if (typeof(T) == typeof(float) || typeof(T) == typeof(double)) newJD2.Add(double.Parse(v2));
+                    if (string.IsNullOrEmpty(v2)) continue;
+                    if (typeof(T) == typeof(string[])) newJD2.Add(v2);
+                    else if (typeof(T) == typeof(bool[])) newJD2.Add(bool.Parse(v2));
+                    else if (typeof(T) == typeof(int[])) newJD2.Add(int.Parse(v2));
+                    else if (typeof(T) == typeof(double[])) newJD2.Add(double.Parse(v2));
                 }
 
-                newJD[sp2[0]] = newJD2;
+                newJD[key] = newJD2;
             }
             else {
-                if (typeof(T) == typeof(string)) newJD[sp2[0]] = value;
-                else if (typeof(T) == typeof(bool)) newJD[sp2[0]] = bool.Parse(value);
-                else if (typeof(T) == typeof(int)) newJD[sp2[0]] = int.Parse(value);
-                else if (typeof(T) == typeof(float) || typeof(T) == typeof(double)) newJD[sp2[0]] = double.Parse(value);
+                if (typeof(T) == typeof(string)) newJD[key] = value;
+                else if (typeof(T) == typeof(bool)) newJD[key] = bool.Parse(value);
+                else if (typeof(T) == typeof(int)) newJD[key] = int.Parse(value);
+                else if (typeof(T) == typeof(double)) newJD[key] = double.Parse(value);
             }
         }
-        else if (v.Contains('~')) {
-            var newJD2 = new JsonData();
-            var sp2 = v.Split('~');
+        else if (typeArray) {
+            var value = v + "~";
+            var sp2 = value.Split('~');
             foreach (var v2 in sp2) {
-                if (typeof(T) == typeof(string)) newJD2.Add(v2);
-                else if (typeof(T) == typeof(bool)) newJD2.Add(bool.Parse(v2));
-                else if (typeof(T) == typeof(int)) newJD2.Add(int.Parse(v2));
-                else if (typeof(T) == typeof(float) || typeof(T) == typeof(double)) newJD2.Add(double.Parse(v2));
+                if (string.IsNullOrEmpty(v2)) continue;
+                if (typeof(T) == typeof(string[])) newJD2.Add(v2);
+                else if (typeof(T) == typeof(bool[])) newJD2.Add(bool.Parse(v2));
+                else if (typeof(T) == typeof(int[])) newJD2.Add(int.Parse(v2));
+                else if (typeof(T) == typeof(double[])) newJD2.Add(double.Parse(v2));
             }
 
             newJD.Add(newJD2);
@@ -295,7 +301,7 @@ JsonData GetSplitData<T>(string input) {
             if (typeof(T) == typeof(string)) newJD.Add(v);
             else if (typeof(T) == typeof(bool)) newJD.Add(bool.Parse(v));
             else if (typeof(T) == typeof(int)) newJD.Add(int.Parse(v));
-            else if (typeof(T) == typeof(float) || typeof(T) == typeof(double)) newJD.Add(double.Parse(v));
+            else if (typeof(T) == typeof(double)) newJD.Add(double.Parse(v));
         }
     }
 
