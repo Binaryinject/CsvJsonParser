@@ -59,7 +59,7 @@ if (args.Length > 0) {
                 case 3:
                     continue;
                 case 4:
-                    keyName.AddRange(line.Values);
+                    keyName.AddRange(line.Values.ToList().ConvertAll(v => v.Trim()));
                     break;
                 case 5:
                     keyType.AddRange(line.Values);
