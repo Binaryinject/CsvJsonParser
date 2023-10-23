@@ -2,7 +2,7 @@
 The json export from csv convert
 
 ## Technical details
-* .NetCore 6.0 runtime.
+* .NetCore 8.0 runtime.
 * XXXX_RoleAttr.csv split comment and json file name.
 * `CS` -> client and server both, `C` -> only client , `S` -> only server, `N` -> ignore.
 * Base type: `INT` `STRING` `DOUBLE` `FLOAT` `BOOL` 
