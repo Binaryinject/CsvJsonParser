@@ -98,6 +98,7 @@ if (args.Length > 0) {
                                     "FLOAT<[]>" => nullObject,
                                     "BOOL<[]>" => nullObject,
                                     "STRING" => "",
+                                    "DESC" => "",
                                     "INT" => 0,
                                     "BOOL" => false,
                                     _ => 0f
@@ -109,6 +110,7 @@ if (args.Length > 0) {
                                     "BOOL" => bool.Parse(parserValue),
                                     "FLOAT" => double.Parse(parserValue),
                                     "DOUBLE" => double.Parse(parserValue),
+                                    "DESC" => string.Empty,
                                     "STRING" => parserValue,
                                     "STRING[]" => GetSplitData<string>(parserValue),
                                     "INT[]" => GetSplitData<int>(parserValue),
@@ -227,6 +229,7 @@ string LuaDefineTypeConvert(string type) {
         "BOOL" => "boolean",
         "FLOAT" => "number",
         "DOUBLE" => "number",
+        "DESC" => "string",
         "STRING" => "string",
         "STRING[]" => "string[]",
         "INT[]" => "number[]",
