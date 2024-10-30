@@ -3,10 +3,11 @@ using System.Text.RegularExpressions;
 using CommandLine;
 using Csv;
 using LitJson;
+using Renci.SshNet;
 
 
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-Parser.Default.ParseArguments<Options>(args).WithParsed(CSVUtility.Convert);
+Parser.Default.ParseArguments<Options>(args).WithParsed(CSVUtility.ConvertParam);
 
 public class Options {
     [Value(0, Required = true, MetaName = "csvfile", HelpText = "csv folder path")]
@@ -14,10 +15,28 @@ public class Options {
 
     [Value(1, Required = false, MetaName = "outfile", HelpText = "output json folder path")]
     public string OutputFolder { get; set; } = "";
+
+    [Value(2, Required = false, MetaName = "updateToServer", HelpText = "update to server")]
+    public string UpdateToServer { get; set; } = "";
+    
+    [Value(3, Required = false, MetaName = "path", HelpText = "remote filePath")]
+    public string RemoteFilePath { get; set; } = "";
+    
+    // [Value(4, Required = false, MetaName = "host", HelpText = "host")]
+    // public string Host { get; set; } = "";
+    //
+    // [Value(5, Required = false, MetaName = "port", HelpText = "port")]
+    // public string Port { get; set; } = "";
+    //
+    // [Value(6, Required = false, MetaName = "username", HelpText = "username")]
+    // public string UserName { get; set; } = "";
+    //
+    // [Value(7, Required = false, MetaName = "psw", HelpText = "psw")]
+    // public string PSW { get; set; } = "";
 }
 
 public partial class CSVUtility {
-    public static void Convert(Options o) {
+    public static void ConvertParam(Options o) {
         var inPath = Path.GetFullPath(o.InputFolder);
         var outPath = Path.GetFullPath(o.OutputFolder);
 
@@ -230,17 +249,19 @@ public partial class CSVUtility {
         }
 
         if (defineClass > 0 && defineKey > 0) {
-            const string idHead = @"return {
-    id = {
-";
-            const string idTail = @"
-    }
-}";
+            const string idHead = "return {\n    id = {\n";
+            const string idTail = "\n    }\n}";
             var complex = $"{fieldContent} {Environment.NewLine}{classContent} {Environment.NewLine}{idHead}{idContent}{idTail}";
             File.WriteAllText($"{outPath}/Define.txt", Regex.Unescape(complex));
             Console.WriteLine($"导出Define --> Class: {defineClass} Keys: {defineKey}");
         }
+
+        if (o.UpdateToServer.Equals("UpdateToServer")) {
+            UpdateToServer(o.OutputFolder, o.RemoteFilePath, "", 22, "", "");
+        }
+        
     }
+
 
     static string LuaDefineTypeConvert(string type) {
         return type switch {
@@ -328,5 +349,50 @@ public partial class CSVUtility {
         }
 
         return newJD;
+    }
+
+    
+    static string ByteConversionGBMBKB(ulong KSize)
+    {
+        const int GB = 1073741824; //定义GB的计算常量
+        const int MB = 1048576; //定义MB的计算常量
+        const int KB = 1024; //定义KB的计算常量
+        if (KSize / GB >= 1) //如果当前Byte的值大于等于1GB
+            return $"{Math.Round(KSize / (float)GB, 2):F}GB"; //将其转换成GB
+        if (KSize / MB >= 1) //如果当前Byte的值大于等于1MB
+            return $"{Math.Round(KSize / (float)MB, 2):F}MB"; //将其转换成MB
+        return KSize / KB >= 1 ? //如果当前Byte的值大于等于1KB
+            $"{Math.Round(KSize / (float)KB, 2):F}KB" : //将其转换成KGB
+            $"{KSize}Byte"; //显示Byte值
+    }
+    static void UpdateToServer(string output, string remotePath, string host, int port, string username, string psw) { 
+        try {
+            var files = Directory.GetFiles($@"{output}\Server", "*.json", SearchOption.AllDirectories);
+
+            using var ssftp = new SftpClient(host, port, username, psw);
+            ssftp.Connect();
+            foreach (var file in files) {
+                using var fileStream = File.OpenRead(file);
+                FileInfo info = new(file);
+                string serverName = remotePath + info.Name;
+                ssftp.UploadFile(fileStream, serverName, true, size => { Console.WriteLine($"UploadFile: {serverName} [{ByteConversionGBMBKB(size)}]"); });
+            }
+
+            ssftp.Disconnect();
+
+            using var sshClient = new SshClient(host, port, username, psw);
+            sshClient.Connect();
+
+            //sh / data / twentyfour / exec.sh
+
+            Console.WriteLine($"执行 /data/twentyfour/exec.sh");
+
+            var commandResult = sshClient.RunCommand("sh /data/twentyfour/exec.sh");
+            Console.WriteLine(commandResult.Result);
+        }
+        catch (Exception ex) {
+            Console.WriteLine("上传文件失败" + ex);
+            Console.ReadKey();
+        }
     }
 }
