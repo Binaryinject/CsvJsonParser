@@ -131,6 +131,11 @@ public partial class CSVUtility {
                                         "DOUBLE<[]>" => nullObject,
                                         "FLOAT<[]>" => nullObject,
                                         "BOOL<[]>" => nullObject,
+                                        "STRING[<>]" => nullArray,
+                                        "INT[<>]" => nullArray,
+                                        "DOUBLE[<>]" => nullArray,
+                                        "FLOAT[<>]" => nullArray,
+                                        "BOOL[<>]" => nullArray,
                                         "STRING" => "",
                                         "DESC" => "",
                                         "INT" => 0,
@@ -146,26 +151,31 @@ public partial class CSVUtility {
                                         "DOUBLE" => double.Parse(parserValue),
                                         "DESC" => string.Empty,
                                         "STRING" => parserValue,
-                                        "STRING[]" => GetSplitData<string>(parserValue),
-                                        "INT[]" => GetSplitData<int>(parserValue),
-                                        "DOUBLE[]" => GetSplitData<double>(parserValue),
-                                        "FLOAT[]" => GetSplitData<double>(parserValue),
-                                        "BOOL[]" => GetSplitData<bool>(parserValue),
-                                        "STRING[][]" => GetSplitData<string[]>(parserValue),
-                                        "INT[][]" => GetSplitData<int[]>(parserValue),
-                                        "DOUBLE[][]" => GetSplitData<double[]>(parserValue),
-                                        "FLOAT[][]" => GetSplitData<double[]>(parserValue),
-                                        "BOOL[][]" => GetSplitData<bool[]>(parserValue),
-                                        "STRING<>" => GetSplitData<string>(parserValue),
-                                        "INT<>" => GetSplitData<int>(parserValue),
-                                        "DOUBLE<>" => GetSplitData<double>(parserValue),
-                                        "FLOAT<>" => GetSplitData<double>(parserValue),
-                                        "BOOL<>" => GetSplitData<bool>(parserValue),
-                                        "STRING<[]>" => GetSplitData<string[]>(parserValue),
-                                        "INT<[]>" => GetSplitData<int[]>(parserValue),
-                                        "DOUBLE<[]>" => GetSplitData<double[]>(parserValue),
-                                        "FLOAT<[]>" => GetSplitData<double[]>(parserValue),
-                                        "BOOL<[]>" => GetSplitData<bool[]>(parserValue),
+                                        "STRING[]" => GetSplitData<string>(parserValue, "[]"),
+                                        "INT[]" => GetSplitData<int>(parserValue, "[]"),
+                                        "DOUBLE[]" => GetSplitData<double>(parserValue, "[]"),
+                                        "FLOAT[]" => GetSplitData<double>(parserValue, "[]"),
+                                        "BOOL[]" => GetSplitData<bool>(parserValue, "[]"),
+                                        "STRING[][]" => GetSplitData<string>(parserValue, "[][]"),
+                                        "INT[][]" => GetSplitData<int>(parserValue, "[][]"),
+                                        "DOUBLE[][]" => GetSplitData<double>(parserValue, "[][]"),
+                                        "FLOAT[][]" => GetSplitData<double>(parserValue, "[][]"),
+                                        "BOOL[][]" => GetSplitData<bool>(parserValue, "[][]"),
+                                        "STRING<>" => GetSplitData<string>(parserValue, "<>"),
+                                        "INT<>" => GetSplitData<int>(parserValue, "<>"),
+                                        "DOUBLE<>" => GetSplitData<double>(parserValue, "<>"),
+                                        "FLOAT<>" => GetSplitData<double>(parserValue, "<>"),
+                                        "BOOL<>" => GetSplitData<bool>(parserValue, "<>"),
+                                        "STRING<[]>" => GetSplitData<string>(parserValue, "<[]>"),
+                                        "INT<[]>" => GetSplitData<int>(parserValue, "<[]>"),
+                                        "DOUBLE<[]>" => GetSplitData<double>(parserValue, "<[]>"),
+                                        "FLOAT<[]>" => GetSplitData<double>(parserValue, "<[]>"),
+                                        "BOOL<[]>" => GetSplitData<bool>(parserValue, "<[]>"),
+                                        "STRING[<>]" => GetSplitData<string>(parserValue, "[<>]"),
+                                        "INT[<>]" => GetSplitData<int>(parserValue, "[<>]"),
+                                        "DOUBLE[<>]" => GetSplitData<double>(parserValue, "[<>]"),
+                                        "FLOAT[<>]" => GetSplitData<double>(parserValue, "[<>]"),
+                                        "BOOL[<>]" => GetSplitData<bool>(parserValue, "[<>]"),
                                         _ => null
                                     };
                                 }
@@ -257,7 +267,7 @@ public partial class CSVUtility {
         }
 
         if (o.UpdateToServer.Equals("UpdateToServer")) {
-            UpdateToServer(o.OutputFolder, o.RemoteFilePath, "", 22, "", "");
+            UpdateToServer(o.OutputFolder, o.RemoteFilePath, "115.159.211.214", 22, "root", "eastbest180410");
         }
         
     }
@@ -291,64 +301,87 @@ public partial class CSVUtility {
             "DOUBLE<[]>" => "table<string, number[]>",
             "FLOAT<[]>" => "table<string, number[]>",
             "BOOL<[]>" => "table<string, boolean[]>",
+            "STRING[<>]" => "table<string, string>[]",
+            "INT[<>]" => "table<string, number>[]",
+            "DOUBLE[<>]" => "table<string, number>[]",
+            "FLOAT[<>]" => "table<string, number>[]",
+            "BOOL[<>]" => "table<string, boolean>[]",
             _ => "nil"
         };
     }
 
-    static JsonData GetSplitData<T>(string input) {
-        var typeArray = typeof(T).ToString().Contains("[]");
+    static JsonData GetArrayData<T>(IEnumerable<string> sp) {
         var newJD = new JsonData();
-        input += "|";
-        var sp = input.Split('|');
         foreach (var v in sp) {
             if (string.IsNullOrEmpty(v)) continue;
-            var newJD2 = new JsonData();
-            if (v.Contains('=')) {
-                var sp2 = v.Split('=');
-                var key = sp2[0];
-                var value = sp2[1];
-                if (typeArray) {
-                    value += "~";
-                    var sp3 = value.Split('~');
-                    foreach (var v2 in sp3) {
-                        if (string.IsNullOrEmpty(v2)) continue;
-                        if (typeof(T) == typeof(string[])) newJD2.Add(v2);
-                        else if (typeof(T) == typeof(bool[])) newJD2.Add(bool.Parse(v2));
-                        else if (typeof(T) == typeof(int[])) newJD2.Add(int.Parse(v2));
-                        else if (typeof(T) == typeof(double[])) newJD2.Add(double.Parse(v2));
-                    }
-
-                    newJD[key] = newJD2;
-                }
-                else {
-                    if (typeof(T) == typeof(string)) newJD[key] = value;
-                    else if (typeof(T) == typeof(bool)) newJD[key] = bool.Parse(value);
-                    else if (typeof(T) == typeof(int)) newJD[key] = int.Parse(value);
-                    else if (typeof(T) == typeof(double)) newJD[key] = double.Parse(value);
-                }
-            }
-            else if (typeArray) {
-                var value = v + "~";
-                var sp2 = value.Split('~');
-                foreach (var v2 in sp2) {
-                    if (string.IsNullOrEmpty(v2)) continue;
-                    if (typeof(T) == typeof(string[])) newJD2.Add(v2);
-                    else if (typeof(T) == typeof(bool[])) newJD2.Add(bool.Parse(v2));
-                    else if (typeof(T) == typeof(int[])) newJD2.Add(int.Parse(v2));
-                    else if (typeof(T) == typeof(double[])) newJD2.Add(double.Parse(v2));
-                }
-
-                newJD.Add(newJD2);
-            }
-            else {
-                if (typeof(T) == typeof(string)) newJD.Add(v);
-                else if (typeof(T) == typeof(bool)) newJD.Add(bool.Parse(v));
-                else if (typeof(T) == typeof(int)) newJD.Add(int.Parse(v));
-                else if (typeof(T) == typeof(double)) newJD.Add(double.Parse(v));
-            }
+            if (typeof(T) == typeof(string)) newJD.Add(v);
+            else if (typeof(T) == typeof(bool)) newJD.Add(bool.Parse(v));
+            else if (typeof(T) == typeof(int)) newJD.Add(int.Parse(v));
+            else if (typeof(T) == typeof(double)) newJD.Add(double.Parse(v));
         }
 
         return newJD;
+    }
+    
+    static JsonData GetObjData<T>(IEnumerable<string> sp) {
+        var newJD = new JsonData();
+        foreach (var v in sp) {
+            if (string.IsNullOrEmpty(v)) continue;
+            var sp2 = v.Split('=');
+            var key = sp2[0];
+            var value = sp2[1];
+            if (typeof(T) == typeof(string)) newJD[key] = value;
+            else if (typeof(T) == typeof(bool)) newJD[key] = bool.Parse(value);
+            else if (typeof(T) == typeof(int)) newJD[key] = int.Parse(value);
+            else if (typeof(T) == typeof(double)) newJD[key] = double.Parse(value);
+        }
+
+        return newJD;
+    }
+    static JsonData GetSplitData<T>(string input, string type) {
+        JsonData newJD;
+        string[] arrays;
+        switch (type) {
+            case "[]":
+                input += "|";
+                return GetArrayData<T>(input.Split('|'));
+            case "<>":
+                input += "|";
+                return GetObjData<T>(input.Split('|'));
+            case "[][]":
+                newJD = new JsonData();
+                input += "|";
+                arrays = input.Split('|');
+                foreach (var array in arrays) {
+                    if (string.IsNullOrEmpty(array)) continue;
+                    var newArray = array + "~";
+                    newJD.Add(GetArrayData<T>(newArray.Split('~')));
+                }
+                return newJD;
+            case "<[]>":
+                newJD = new JsonData();
+                input += "|";
+                arrays = input.Split('|');
+                foreach (var array in arrays) {
+                    if (string.IsNullOrEmpty(array)) continue;
+                    var sp = array.Split('=');
+                    var newArray = sp[1] + "~";
+                    newJD[sp[0]] = GetArrayData<T>(newArray.Split('~'));
+                }
+                return newJD;
+            case "[<>]":
+                newJD = new JsonData();
+                input += "|";
+                arrays = input.Split('|');
+                foreach (var array in arrays) {
+                    if (string.IsNullOrEmpty(array)) continue;
+                    var newArray = array + "~";
+                    newJD.Add(GetObjData<T>(newArray.Split('~')));
+                }
+                return newJD;
+            default:
+                return null;
+        }
     }
 
     
